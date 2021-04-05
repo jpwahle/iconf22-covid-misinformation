@@ -14,3 +14,7 @@
  {1.0: 1081, 0.0: 513}
 ###### reco_test Statistics######
  {1.0: 271, 0.0: 129}
+###### co19fn_train Statistics######
+ {0: 1272, 1: 984}
+###### co19fn_test Statistics######
+ {0: 319, 1: 246}
