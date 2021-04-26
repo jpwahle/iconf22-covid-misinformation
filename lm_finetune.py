@@ -1,7 +1,3 @@
-'''
-Author: Nischal A, B.Tech Computer Science, IIT Patna
-'''
-
 ################ Setup ##############
 #####################################
 import torch
@@ -447,7 +443,7 @@ def main():
 	(x1_train, x2_train, y_train), (x1_val, x2_val, y_val), (x1_test, x2_test, y_test) = get_data(train_df, test_df)
 
 	# Geting the Transformer Tokenized Output
-	MAX_LEN=100
+	MAX_LEN=200
 	#model_name = 'bert-base-uncased'
 	#model_name = 'distilbert-base-uncased' #doesn't work (tokenid fault)
 	#model_name = 'roberta-base'

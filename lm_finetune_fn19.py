@@ -1,7 +1,3 @@
-'''
-Author: Nischal A, B.Tech Computer Science, IIT Patna
-'''
-
 ################ Setup ##############
 #####################################
 import torch
@@ -60,20 +56,20 @@ class SentencePairClassifier(nn.Module):
         self.model_name = bert_model
         #  Instantiating BERT-based model object
         if bert_model == "covid-roberta":
-        	self.config = transformers.RobertaConfig.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_RoBERTa/old/config.json')
-        	self.bert_layer = transformers.RobertaModel.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_RoBERTa/old/pytorch_model.bin', config = self.config)
+        	self.config = transformers.RobertaConfig.from_pretrained('Intermediate_Train/models/COVID_RoBERTa/old/config.json')
+        	self.bert_layer = transformers.RobertaModel.from_pretrained('Intermediate_Train/models/COVID_RoBERTa/old/pytorch_model.bin', config = self.config)
         elif bert_model == "covid-bart":
-        	self.config = transformers.BartConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_Bart_mlm/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.BartModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_Bart_mlm/pytorch_model.bin", config = self.config)
+        	self.config = transformers.BartConfig.from_pretrained("Intermediate_Train/models/COVID_Bart_mlm/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.BartModel.from_pretrained("Intermediate_Train/models/COVID_Bart_mlm/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-deberta":
-        	self.config = transformers.DebertaConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DeBERTa/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.DebertaModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DeBERTa/pytorch_model.bin", config = self.config)
+        	self.config = transformers.DebertaConfig.from_pretrained("Intermediate_Train/models/COVID_DeBERTa/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.DebertaModel.from_pretrained("Intermediate_Train/models/COVID_DeBERTa/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-longformer":
-        	self.config = transformers.LongformerConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_longformer/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.LongformerModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_longformer/pytorch_model.bin", config = self.config)
+        	self.config = transformers.LongformerConfig.from_pretrained("Intermediate_Train/models/COVID_longformer/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.LongformerModel.from_pretrained("Intermediate_Train/models/COVID_longformer/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-twitter-bert":
-        	self.config = transformers.BertConfig.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_TweetBERT/config.json')
-        	self.bert_layer = transformers.BertModel.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_TweetBERT/pytorch_model.bin', config = self.config)	    	
+        	self.config = transformers.BertConfig.from_pretrained('Intermediate_Train/models/COVID_TweetBERT/config.json')
+        	self.bert_layer = transformers.BertModel.from_pretrained('Intermediate_Train/models/COVID_TweetBERT/pytorch_model.bin', config = self.config)	    	
         else:
 	        self.config = AutoConfig.from_pretrained(bert_model, output_hidden_states=False)
 	        self.bert_layer = AutoModel.from_pretrained(bert_model, config = self.config)
@@ -227,7 +223,6 @@ def get_data_loader(batch_size, inputs, masks, token_ids, labels):
 def get_transformer_model(modelname):
 	if modelname == 'covid-roberta':
 		tokenizer = transformers.RobertaTokenizer.from_pretrained('roberta-base', max_len=512)
-		# tokenizer = transformers.RobertaTokenizer.from_pretrained("/home2/tirthankar/Nischal/dke/cord-19/cord-19/models/COVID", max_len=512)
 	elif modelname == 'covid-bart':
 		tokenizer = transformers.AutoTokenizer.from_pretrained('facebook/bart-base', max_len=512)
 	elif modelname == 'covid-deberta':

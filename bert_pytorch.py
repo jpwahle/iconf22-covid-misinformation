@@ -1,7 +1,3 @@
-'''
-Author: Nischal A, B.Tech Computer Science, IIT Patna
-'''
-
 ################ Setup ##############
 #####################################
 import torch
