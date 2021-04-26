@@ -63,7 +63,7 @@ print('Begining Data Collator')
 dataset = transformers.LineByLineTextDataset(
     tokenizer = tokenizer,
     file_path = "lm_data/train.txt", #should be train
-    block_size = 256,
+    block_size = 128,
 )
 
 data_collator = transformers.DataCollatorForLanguageModeling(
@@ -80,14 +80,6 @@ training_args = transformers.TrainingArguments(
     save_total_limit = 2,
 )
 
-## prediction_loss_only not working in tfrs 4.3.0
-# trainer = transformers.Trainer(
-#     model = model,
-#     args = training_args,
-#     data_collator = data_collator,
-#     train_dataset = dataset,
-#     prediction_loss_only = True,
-# )
 trainer = transformers.Trainer(
     model = model,
     args = training_args,

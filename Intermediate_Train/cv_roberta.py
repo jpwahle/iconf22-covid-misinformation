@@ -72,7 +72,7 @@ print('Begining Data Collator')
 dataset = transformers.LineByLineTextDataset(
     tokenizer = tokenizer,
     file_path = "lm_data/train.txt", #should be train
-    block_size = 256,
+    block_size = 128,
 )
 
 data_collator = transformers.DataCollatorForLanguageModeling(
