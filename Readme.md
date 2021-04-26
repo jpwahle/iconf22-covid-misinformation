@@ -2,6 +2,8 @@
 
 This repository contains the code and data for Covid-19 Misinformation detection project.
 
+Create the conda environment with the requirements "conda env create -f tfrs_env.yml"          
+
 bert_pytorch.py - Code for using BERT based embeddings for downstream task.          
 lm_finetune.py - Code for FINE-TUNING on BERT based architectures.               
 lm_finetune_par.py - Code for FINE-TUNING on multiple GPUs for Covid-CQ Dataset.             
