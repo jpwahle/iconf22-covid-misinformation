@@ -172,15 +172,20 @@ def get_data(train_df, test_df):
 def gen_random_samples(test_df):
 	num_samples = int(len(test_df)/20) #Considering 1% of the total available data
 	index_list = [ctr for ctr in range(len(test_df))]
-	chosen_indices = random.sample(index_list, num_samples)
-	x1_sample, x2_sample, y_sample = test_df['premise'][chosen_indices], test_df['text'][chosen_indices], test_df['stance'][chosen_indices]
-	x1_sample, x2_sample, y_sample = x1_sample.tolist(), x2_sample.tolist(), y_sample.tolist()
-	sample_chosen = pd.DataFrame()
-	sample_chosen['x1'] = x1_sample
-	sample_chosen['x2'] = x2_sample
-	sample_chosen['y'] = y_sample
-	sample_chosen.to_csv("resultscq/significance/sample_chosen.csv", index=False)
-	return x1_sample, x2_sample, y_sample
+	x1_sample_list, x2_sample_list, y_sample_list = [], [], []
+	for i in range(150):
+		chosen_indices = random.sample(index_list, num_samples)
+		x1_sample, x2_sample, y_sample = test_df['premise'][chosen_indices], test_df['text'][chosen_indices], test_df['stance'][chosen_indices]
+		x1_sample, x2_sample, y_sample = x1_sample.tolist(), x2_sample.tolist(), y_sample.tolist()
+		x1_sample_list.append(x1_sample)
+		x2_sample_list.append(x2_sample)
+		y_sample_list.append(y_sample)
+	# sample_chosen = pd.DataFrame()
+	# sample_chosen['x1'] = x1_sample
+	# sample_chosen['x2'] = x2_sample
+	# sample_chosen['y'] = y_sample
+	# sample_chosen.to_csv("resultscq/significance/sample_chosen.csv", index=False)
+	return x1_sample_list, x2_sample_list, y_sample_list
 
 ################ Tokenizer ####################
 ###############################################
@@ -411,7 +416,8 @@ def evaluate(prediction_dataloader, model, model_name, path_to_model, load = Fal
 	clsf_report = pd.DataFrame(classification_report(y_true = true_labels, y_pred = predictions, output_dict=True, target_names = ['neutral', 'against', 'for']))
 	clsf_report.to_csv(str('resultscq/'+bert_model+'_cq.csv'), index= True)
 
-def significance(sample_dataloader, model, model_name, models_path='resultscq/models'):
+def significance(sample_dataloader_list, model, model_name, models_path='resultscq/models'):
+	# Get the sample dataloaders
 	bert_model = model_name.split('/')
 	if len(bert_model) > 1:
 		bert_model = bert_model[1]
@@ -429,42 +435,54 @@ def significance(sample_dataloader, model, model_name, models_path='resultscq/mo
 	model.load_state_dict(torch.load(chosen_model_path, map_location=device))
 
 	print('Evaluating on the sample set')
+	f1_score_list = []
+	for sample_dataloader in sample_dataloader_list:
+		# Put model in evaluation mode
+		model.eval()
 
-	# Put model in evaluation mode
-	model.eval()
+		# Tracking variables 
+		predictions , true_labels = [], []
 
-	# Tracking variables 
-	predictions , true_labels = [], []
+		# Predict 
+		for batch in sample_dataloader:
+		  # Add batch to GPU
+		  batch = tuple(t.to(device) for t in batch)
+		  
+		  # Unpack the inputs from our dataloader
+		  b_input_ids, b_input_mask, b_token_ids, b_labels = batch
+		  
+		  # Telling the model not to compute or store gradients, saving memory and 
+		  # speeding up prediction
+		  with torch.no_grad():
+		      # Forward pass, calculate logit predictions
+		      logits = model(b_input_ids, b_input_mask, b_token_ids)
 
-	# Predict 
-	for batch in sample_dataloader:
-	  # Add batch to GPU
-	  batch = tuple(t.to(device) for t in batch)
-	  
-	  # Unpack the inputs from our dataloader
-	  b_input_ids, b_input_mask, b_token_ids, b_labels = batch
-	  
-	  # Telling the model not to compute or store gradients, saving memory and 
-	  # speeding up prediction
-	  with torch.no_grad():
-	      # Forward pass, calculate logit predictions
-	      logits = model(b_input_ids, b_input_mask, b_token_ids)
+		  # Move logits and labels to CPU
+		  logits = logits.detach().cpu().numpy()
+		  label_ids = b_labels.to('cpu').numpy()
 
-	  # Move logits and labels to CPU
-	  logits = logits.detach().cpu().numpy()
-	  label_ids = b_labels.to('cpu').numpy()
-
-	  pred_flat = np.argmax(logits, axis=1).flatten()
-	  labels_flat = label_ids.flatten()
-	  
-	  # Store predictions and true labels
-	  predictions.extend(pred_flat)
-	  true_labels.extend(labels_flat)
+		  pred_flat = np.argmax(logits, axis=1).flatten()
+		  labels_flat = label_ids.flatten()
+		  
+		  # Store predictions and true labels
+		  predictions.extend(pred_flat)
+		  true_labels.extend(labels_flat)
+		f1_score_list.append(metrics.f1_score(true_labels, predictions, average='macro'))
 	# Printing the F1-macro
 	file_name = 'resultscq/significance/' + bert_model + '_covidcq.txt'
 	with open(file_name, 'w') as infile:
-		print(metrics.f1_score(true_labels, predictions, average='macro'), file=infile)
+		for score in f1_score_list:
+			print(score, file=infile)
 	print("Printed F1 for model", bert_model)
+
+def prepare_sample_loader(batch_size, model_name, x1_sample_list, x2_sample_list, tokenizer, MAX_LEN, y_sample_list):
+	sample_dataloader_list = []
+	for i in range(len(x1_sample_list)):
+		sample_inputs, sample_masks, sample_token_ids = tokenize(model_name, x1_sample_list[i], x2_sample_list[i], tokenizer, MAX_LEN)
+		sample_labels = torch.tensor(y_sample_list[i], dtype=torch.long, device =device)
+		sample_data, sample_sampler, sample_dataloader = get_data_loader(batch_size, sample_inputs, sample_masks, sample_token_ids, sample_labels)
+		sample_dataloader_list.append(sample_dataloader)
+	return sample_dataloader_list
 
 
 ################ Main TRAINING CODE ###########################
@@ -565,7 +583,7 @@ def main():
 	print(test_df.columns)
 
 	(x1_train, x2_train, y_train), (x1_val, x2_val, y_val), (x1_test, x2_test, y_test) = get_data(train_df, test_df)
-	x1_sample, x2_sample, y_sample = gen_random_samples(test_df)
+	x1_sample_list, x2_sample_list, y_sample_list = gen_random_samples(test_df)
 
 	# Geting the Transformer Tokenized Output
 	MAX_LEN=100
@@ -621,13 +639,11 @@ def main():
 		train_inputs, train_masks, train_token_ids = tokenize(model_name, x1_train, x2_train, tokenizer, MAX_LEN)
 		val_inputs, val_masks, val_token_ids = tokenize(model_name, x1_val, x2_val, tokenizer, MAX_LEN)
 		test_inputs, test_masks, test_token_ids = tokenize(model_name, x1_test, x2_test, tokenizer, MAX_LEN)
-		sample_inputs, sample_masks, sample_token_ids = tokenize(model_name, x1_sample, x2_sample, tokenizer, MAX_LEN)
 
 		# Converting the labels into torch tensors
 		train_labels = torch.tensor(y_train, dtype=torch.long, device =device)
 		val_labels = torch.tensor(y_val, dtype=torch.long, device =device)
 		test_labels = torch.tensor(y_test, dtype=torch.long, device =device)
-		sample_labels = torch.tensor(y_sample, dtype=torch.long, device =device)
 
 		# Printing the shape of these tensors
 		print('Printing the shape of the final tensors')
@@ -638,7 +654,7 @@ def main():
 		train_data, train_sampler, train_dataloader = get_data_loader(batch_size, train_inputs, train_masks, train_token_ids, train_labels)
 		val_data, val_sampler, val_dataloader = get_data_loader(batch_size, val_inputs, val_masks, val_token_ids, val_labels)
 		test_data, test_sampler, test_dataloader = get_data_loader(batch_size, test_inputs, test_masks, test_token_ids, test_labels)
-		sample_data, sample_sampler, sample_dataloader = get_data_loader(batch_size, sample_inputs, sample_masks, sample_token_ids, sample_labels)
+		sample_dataloader_list = prepare_sample_loader(batch_size, model_name, x1_sample_list, x2_sample_list, tokenizer, MAX_LEN, y_sample_list)
 		print("Successfull in data prepration!")
 
 		# Getting optimzer and scheduler
@@ -655,7 +671,7 @@ def main():
 
 		# Significance Test
 		models_path = 'resultscq/models'
-		significance(sample_dataloader, model, model_name, models_path)
+		significance(sample_dataloader_list, model, model_name, models_path)
 
 if __name__ == "__main__":
     main()
