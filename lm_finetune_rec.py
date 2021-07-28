@@ -1,3 +1,7 @@
+'''
+Author: Nischal A, B.Tech Computer Science, IIT Patna
+'''
+
 ################ Setup ##############
 #####################################
 import torch
@@ -23,7 +27,10 @@ else:
 ################ All Imports ##############
 ###########################################
 
-
+import os
+import random
+from os import listdir
+from os.path import isfile, join
 import time
 import datetime
 import random
@@ -32,7 +39,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import copy
@@ -45,7 +51,6 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler, Dataset
 from transformers import AutoTokenizer, AutoModel, AutoConfig, AdamW, get_linear_schedule_with_warmup
 
-
 ###### Main LM Classifier Model ######
 ######################################
 
@@ -56,20 +61,23 @@ class SentencePairClassifier(nn.Module):
         self.model_name = bert_model
         #  Instantiating BERT-based model object
         if bert_model == "covid-roberta":
-        	self.config = transformers.RobertaConfig.from_pretrained('Intermediate_Train/models/COVID_RoBERTa/old/config.json')
-        	self.bert_layer = transformers.RobertaModel.from_pretrained('Intermediate_Train/models/COVID_RoBERTa/old/pytorch_model.bin', config = self.config)
+        	self.config = transformers.RobertaConfig.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_RoBERTa/old/config.json')
+        	self.bert_layer = transformers.RobertaModel.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_RoBERTa/old/pytorch_model.bin', config = self.config)
         elif bert_model == "covid-bart":
-        	self.config = transformers.BartConfig.from_pretrained("Intermediate_Train/models/COVID_Bart_mlm/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.BartModel.from_pretrained("Intermediate_Train/models/COVID_Bart_mlm/pytorch_model.bin", config = self.config)
+        	self.config = transformers.BartConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_Bart_mlm/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.BartModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_Bart_mlm/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-deberta":
-        	self.config = transformers.DebertaConfig.from_pretrained("Intermediate_Train/models/COVID_DeBERTa/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.DebertaModel.from_pretrained("Intermediate_Train/models/COVID_DeBERTa/pytorch_model.bin", config = self.config)
+        	self.config = transformers.DebertaConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DeBERTa/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.DebertaModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DeBERTa/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-longformer":
-        	self.config = transformers.LongformerConfig.from_pretrained("Intermediate_Train/models/COVID_longformer/config.json", output_hidden_states=False)
-	        self.bert_layer = transformers.LongformerModel.from_pretrained("Intermediate_Train/models/COVID_longformer/pytorch_model.bin", config = self.config)
+        	self.config = transformers.LongformerConfig.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_longformer/config.json", output_hidden_states=False)
+	        self.bert_layer = transformers.LongformerModel.from_pretrained("/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_longformer/pytorch_model.bin", config = self.config)
         elif bert_model == "covid-twitter-bert":
-        	self.config = transformers.BertConfig.from_pretrained('Intermediate_Train/models/COVID_TweetBERT/config.json')
-        	self.bert_layer = transformers.BertModel.from_pretrained('Intermediate_Train/models/COVID_TweetBERT/pytorch_model.bin', config = self.config)	    	
+        	self.config = transformers.BertConfig.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_TweetBERT/config.json')
+        	self.bert_layer = transformers.BertModel.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_TweetBERT/pytorch_model.bin', config = self.config)	 
+        elif bert_model == "covid-distilbert":
+        	self.config = transformers.DistilBertConfig.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DistilBERT/config.json')
+        	self.bert_layer = transformers.DistilBertModel.from_pretrained('/home1/tirthankar/Nischal/DKE/cord-19/models/COVID_DistilBERT/pytorch_model.bin', config = self.config)	   	
         else:
 	        self.config = AutoConfig.from_pretrained(bert_model, output_hidden_states=False)
 	        self.bert_layer = AutoModel.from_pretrained(bert_model, config = self.config)
@@ -99,10 +107,10 @@ class SentencePairClassifier(nn.Module):
 
         # Feeding the inputs to the BERT-based model to obtain contextualized representations
         special_models = ['roberta-base', 'distilbert-base-uncased', 'covid-roberta', 'facebook/bart-base',
-        					'covid-bart', 'covid-longformer', "vinai/bertweet-base"]
+        					'covid-bart', 'covid-longformer', "vinai/bertweet-base", 'allenai/longformer-base-4096', "covid-distilbert"]
         if self.model_name in special_models:
         	token_type_ids = None
-        if self.model_name == 'distilbert-base-uncased' or 'facebook/bart-base' or 'covid-bart':
+        if self.model_name == 'distilbert-base-uncased' or 'facebook/bart-base' or 'covid-bart' or "covid-distilbert":
         	hidden_state  = self.bert_layer(input_ids, attn_masks, token_type_ids)
         	# print(len(pooler_output))
         	# for obj in pooler_output:
@@ -156,6 +164,26 @@ def get_data(train_df, test_df):
 	x1_val, x2_val, y_val = x1_val.tolist(), x2_val.tolist(), y_val.tolist()
 	x1_test, x2_test, y_test = x1_test.tolist(), x2_test.tolist(), y_test.tolist()
 	return (x1_train, x2_train, y_train), (x1_val, x2_val, y_val), (x1_test, x2_test, y_test)
+
+################ Generating Random Samples ##############
+#########################################################
+def gen_random_samples(test_df):
+	num_samples = int(len(test_df)/20) #Considering 1% of the total available data
+	index_list = [ctr for ctr in range(len(test_df))]
+	x1_sample_list, x2_sample_list, y_sample_list = [], [], []
+	for i in range(150):
+		chosen_indices = random.sample(index_list, num_samples)
+		x1_sample, x2_sample, y_sample = test_df['title'][chosen_indices], test_df['content'][chosen_indices], test_df['label'][chosen_indices]
+		x1_sample, x2_sample, y_sample = x1_sample.tolist(), x2_sample.tolist(), y_sample.tolist()
+		x1_sample_list.append(x1_sample)
+		x2_sample_list.append(x2_sample)
+		y_sample_list.append(y_sample)
+	# sample_chosen = pd.DataFrame()
+	# sample_chosen['x1'] = x1_sample
+	# sample_chosen['x2'] = x2_sample
+	# sample_chosen['y'] = y_sample
+	# sample_chosen.to_csv("resultsrecov/significance/sample_chosen.csv", index=False)
+	return x1_sample_list, x2_sample_list, y_sample_list
 
 ################ Tokenizer ####################
 ###############################################
@@ -223,6 +251,7 @@ def get_data_loader(batch_size, inputs, masks, token_ids, labels):
 def get_transformer_model(modelname):
 	if modelname == 'covid-roberta':
 		tokenizer = transformers.RobertaTokenizer.from_pretrained('roberta-base', max_len=512)
+		# tokenizer = transformers.RobertaTokenizer.from_pretrained("/home2/tirthankar/Nischal/dke/cord-19/cord-19/models/COVID", max_len=512)
 	elif modelname == 'covid-bart':
 		tokenizer = transformers.AutoTokenizer.from_pretrained('facebook/bart-base', max_len=512)
 	elif modelname == 'covid-deberta':
@@ -231,12 +260,15 @@ def get_transformer_model(modelname):
 		tokenizer = transformers.AutoTokenizer.from_pretrained('allenai/longformer-base-4096')
 	elif modelname == 'covid-twitter-bert':
 		tokenizer = transformers.AutoTokenizer.from_pretrained('digitalepidemiologylab/covid-twitter-bert-v2', do_lower_case = True)
+	elif modelname == 'covid-distilbert':
+		tokenizer = transformers.AutoTokenizer.from_pretrained('distilbert-base-uncased', max_len=512)
 	else:
 		tokenizer = AutoTokenizer.from_pretrained(modelname, do_lower_case = True) 
 
 	model = SentencePairClassifier(bert_model = modelname, freeze_bert = False)
 	# Tell pytorch to run this model on the GPU.
-	model.cuda()
+	if torch.cuda.is_available():
+		model.cuda()
 
 	return tokenizer, model
 
@@ -382,6 +414,74 @@ def evaluate(prediction_dataloader, model, model_name, path_to_model, load = Fal
 	clsf_report = pd.DataFrame(classification_report(y_true = true_labels, y_pred = predictions, output_dict=True, target_names = ['fake', 'real']))
 	clsf_report.to_csv(str('resultsrecov/'+bert_model+'_recov.csv'), index= True)
 
+def significance(sample_dataloader_list, model, model_name, models_path='resultsrecov/models'):
+	# Get the sample dataloaders
+	bert_model = model_name.split('/')
+	if len(bert_model) > 1:
+		bert_model = bert_model[1]
+	else:
+		bert_model = bert_model[0]
+	# Find list of all available models 
+	onlyfiles = [f for f in listdir(models_path) if isfile(join(models_path, f))]
+	chosen_model_path = ''
+	for file in onlyfiles:
+		if file.split('_lr')[0] == bert_model:
+			chosen_model_path = os.path.join(models_path, file)
+			break
+	
+	print("Loading the weights of the model...")
+	model.load_state_dict(torch.load(chosen_model_path, map_location=device))
+
+	print('Evaluating on the sample set')
+	f1_score_list = []
+	for sample_dataloader in sample_dataloader_list:
+		# Put model in evaluation mode
+		model.eval()
+
+		# Tracking variables 
+		predictions , true_labels = [], []
+
+		# Predict 
+		for batch in sample_dataloader:
+		  # Add batch to GPU
+		  batch = tuple(t.to(device) for t in batch)
+		  
+		  # Unpack the inputs from our dataloader
+		  b_input_ids, b_input_mask, b_token_ids, b_labels = batch
+		  
+		  # Telling the model not to compute or store gradients, saving memory and 
+		  # speeding up prediction
+		  with torch.no_grad():
+		      # Forward pass, calculate logit predictions
+		      logits = model(b_input_ids, b_input_mask, b_token_ids)
+
+		  # Move logits and labels to CPU
+		  logits = logits.detach().cpu().numpy()
+		  label_ids = b_labels.to('cpu').numpy()
+
+		  pred_flat = np.argmax(logits, axis=1).flatten()
+		  labels_flat = label_ids.flatten()
+		  
+		  # Store predictions and true labels
+		  predictions.extend(pred_flat)
+		  true_labels.extend(labels_flat)
+		f1_score_list.append(metrics.f1_score(true_labels, predictions, average='macro'))
+	# Printing the F1-macro
+	file_name = 'resultsrecov/significance/' + bert_model + '_recov.txt'
+	with open(file_name, 'w') as infile:
+		for score in f1_score_list:
+			print(score, file=infile)
+	print("Printed F1 for model", bert_model)
+
+def prepare_sample_loader(batch_size, model_name, x1_sample_list, x2_sample_list, tokenizer, MAX_LEN, y_sample_list):
+	sample_dataloader_list = []
+	for i in range(len(x1_sample_list)):
+		sample_inputs, sample_masks, sample_token_ids = tokenize(model_name, x1_sample_list[i], x2_sample_list[i], tokenizer, MAX_LEN)
+		sample_labels = torch.tensor(y_sample_list[i], dtype=torch.long, device =device)
+		sample_data, sample_sampler, sample_dataloader = get_data_loader(batch_size, sample_inputs, sample_masks, sample_token_ids, sample_labels)
+		sample_dataloader_list.append(sample_dataloader)
+	return sample_dataloader_list
+
 
 ################ Main TRAINING CODE ###########################
 ###############################################################
@@ -456,7 +556,7 @@ def train_bert(net, criterion, opti, lr, lr_scheduler, train_loader, val_loader,
     	bert_model = bert_model[1]
     else:
     	bert_model = bert_model[0]
-    path_to_model='models/{}_lr_{}_val_loss_{}_ep_{}.pt'.format(bert_model, lr, round(best_loss, 5), best_ep)
+    path_to_model='resultsrecov/models/{}_lr_{}_val_loss_{}_ep_{}.pt'.format(bert_model, lr, round(best_loss, 5), best_ep)
     torch.save(net_copy.state_dict(), path_to_model)
     print("The model has been saved in {}".format(path_to_model))
 
@@ -481,6 +581,7 @@ def main():
 	print(test_df.columns)
 
 	(x1_train, x2_train, y_train), (x1_val, x2_val, y_val), (x1_test, x2_test, y_test) = get_data(train_df, test_df)
+	x1_sample_list, x2_sample_list, y_sample_list = gen_random_samples(test_df)
 
 	# Geting the Transformer Tokenized Output
 	#model_name = 'bert-base-uncased'
@@ -503,20 +604,25 @@ def main():
 	#model_name = 'covid-twitter-bert'
 
 	# Automatic procedure
-	ip_file = open("model_names_new.txt")
+	ip_file = open("model_names.txt")
 	ips = ip_file.read()
 	ips = ips.split("\n")
+	skip_file = open("skip_dummy.txt")
+	skips = skip_file.read()
+	skips = skips.split("\n")
 	# Iterating through all models
 	for model_name in ips:
+		if model_name in skips:
+			continue
 		model_name = model_name.strip("\'")
 		MAX_LEN=200
 		if model_name == 'vinai/bertweet-base':
-			MAX_LEN = 200
+			MAX_LEN = 100
 		print('Using modelname', model_name)
 		#batch_size = 4
-		if model_name == 'digitalepidemiologylab/covid-twitter-bert-v2' or 'covid-twitter-bert':
+		if model_name == 'digitalepidemiologylab/covid-twitter-bert-v2' or 'covid-twitter-bert' or 'manueltonneau/biocovid-bert-large-cased':
 			batch_size = 8
-		elif model_name == 'covid-longformer':
+		elif model_name == 'covid-longformer' or 'allenai/longformer-base-4096':
 			batch_size = 4
 		else:
 			batch_size = 16
@@ -545,6 +651,7 @@ def main():
 		train_data, train_sampler, train_dataloader = get_data_loader(batch_size, train_inputs, train_masks, train_token_ids, train_labels)
 		val_data, val_sampler, val_dataloader = get_data_loader(batch_size, val_inputs, val_masks, val_token_ids, val_labels)
 		test_data, test_sampler, test_dataloader = get_data_loader(batch_size, test_inputs, test_masks, test_token_ids, test_labels)
+		sample_dataloader_list = prepare_sample_loader(batch_size, model_name, x1_sample_list, x2_sample_list, tokenizer, MAX_LEN, y_sample_list)
 		print("Successfull in data prepration!")
 
 		# Getting optimzer and scheduler
@@ -553,11 +660,15 @@ def main():
 
 		# Main Traning
 		criterion = nn.CrossEntropyLoss()
-		model = train_bert(model, criterion, optimizer, lr, scheduler, train_dataloader, val_dataloader, epochs, iters_to_accumulate, model_name)
+		# model = train_bert(model, criterion, optimizer, lr, scheduler, train_dataloader, val_dataloader, epochs, iters_to_accumulate, model_name)
 		
-		# Evaluation on Test set
-		path_to_model = 'models/covid-twitter-bert_lr_2e-05_val_loss_0.04654_ep_2.pt'
-		evaluate(test_dataloader, model, model_name, path_to_model = path_to_model, load = False)
+		# # Evaluation on Test set
+		# path_to_model = 'models/covid-twitter-bert_lr_2e-05_val_loss_0.04654_ep_2.pt'
+		# evaluate(test_dataloader, model, model_name, path_to_model = path_to_model, load = False)
+
+		# Significance Test
+		models_path = 'resultsrecov/models'
+		significance(sample_dataloader_list, model, model_name, models_path)
 
 if __name__ == "__main__":
     main()
