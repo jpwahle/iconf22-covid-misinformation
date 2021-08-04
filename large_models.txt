@@ -1,6 +1,0 @@
-'vinai/bertweet-base'
-'digitalepidemiologylab/covid-twitter-bert-v2'
-'manueltonneau/clinicalcovid-bert-base-cased'
-'manueltonneau/biocovid-bert-large-cased'
-'covid-longformer'
-'covid-twitter-bert'

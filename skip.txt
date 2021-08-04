@@ -1,2 +1,0 @@
-'bert-base-uncased'
-'distilbert-base-uncased'
