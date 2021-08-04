@@ -4,3 +4,4 @@ pandas
 ray[default]
 wandb
 six
+torch

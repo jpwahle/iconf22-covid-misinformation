@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import wandb
 import random
 import numpy as np
 from pathlib import Path
@@ -11,7 +12,7 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from transformers import Trainer, TrainingArguments, AutoTokenizer, AutoModelForSequenceClassification, AutoTokenizer, AutoConfig, EvalPrediction
 
 
-def create_compute_metrics_fn(average="macro"):
+def create_compute_metrics_fn(average):
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         predictions = np.argmax(logits, axis=-1)
@@ -19,7 +20,7 @@ def create_compute_metrics_fn(average="macro"):
         acc = accuracy_score(labels, predictions)
         return {
             'accuracy': acc,
-            'f1-macro': f1,
+            'f1-' + average: f1,
             'precision': precision,
             'recall': recall
         }
@@ -60,6 +61,8 @@ def main():
     # TODO: Depending on the model size, we may need to reduce the batch size and sequence length
     # model_list = load_model_list(args.model_list_path)
 
+    # Logging in wandb
+    wandb.login(key="1ff551057f6edc80ab90cbf65abf26d529e4d5b8")
 
     # Number of classes per dataset (hardcoded) just for testing the num_labels function that automatically calculates the number of labels
     num_class_dict = {
@@ -107,7 +110,8 @@ def main():
         )
 
     # Compile Trainer
-    compute_metric = create_compute_metrics_fn("macro")
+    average = "micro"
+    compute_metric = create_compute_metrics_fn(average)
     trainer = Trainer(
         model=model, args=training_args, train_dataset=train_dataset, eval_dataset=test_dataset, compute_metrics=compute_metric
     )
@@ -144,7 +148,7 @@ def main():
                 score = compute_metric(EvalPrediction(predictions=preds[chosen_indices], label_ids=labels[chosen_indices]))
 
                 # Write to file
-                f.write(str(score["f1-macro"]) + os.linesep)
+                f.write(str(score["f1-" + average]) + os.linesep)
 
 if __name__ == '__main__':
     main()
