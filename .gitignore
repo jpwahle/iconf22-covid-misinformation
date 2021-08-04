@@ -144,3 +144,5 @@ runs/
 default_trainer/
 param_trainer/
 significance_results/
+wandb/
+.DS_Store

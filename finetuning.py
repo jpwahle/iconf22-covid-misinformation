@@ -63,6 +63,8 @@ def main():
 
     # Logging in wandb
     wandb.login(key="1ff551057f6edc80ab90cbf65abf26d529e4d5b8")
+    wandb.init(project="covid-fakenews", entity="jpelhaw")
+
 
     # Number of classes per dataset (hardcoded) just for testing the num_labels function that automatically calculates the number of labels
     num_class_dict = {
@@ -83,8 +85,11 @@ def main():
     tokenizer = init_tokenizer(args.model_name_or_path)
 
     # Create Datasets
-    train_dataset = COVIDDataset(data_path=args.train_path, tokenizer=tokenizer, dataset_name=args.dataset_name)
-    test_dataset = COVIDDataset(data_path=args.val_path, tokenizer=tokenizer, dataset_name=args.dataset_name)
+    train_path = os.path.join(args.dataset_path, args.dataset_name + "_train.csv")
+    test_path = os.path.join(args.dataset_path, args.dataset_name + "_test.csv")
+
+    train_dataset = COVIDDataset(data_path=train_path, tokenizer=tokenizer, dataset_name=args.dataset_name)
+    test_dataset = COVIDDataset(data_path=test_path, tokenizer=tokenizer, dataset_name=args.dataset_name)
 
     num_labels = train_dataset.num_labels()
     assert num_labels == num_class_dict.get(args.dataset_name), "Number of labels in train dataset does not align with expected number of labels for {}".format(args.dataset_name)
@@ -96,10 +101,10 @@ def main():
 
     # Configure Training Arguments
     if args.use_standard_config:
-        training_args = TrainingArguments("default_trainer")
+        training_args = TrainingArguments(f"test-{args.model_name_or_path}-{args.dataset_name}-default")
     else:
         training_args = TrainingArguments(
-            "param_trainer",
+            f"test-{args.model_name_or_path}-{args.dataset_name}",
             num_train_epochs=args.epochs,
             adam_epsilon=args.adam_epsilon,
             learning_rate=args.learning_rate,
@@ -110,7 +115,7 @@ def main():
         )
 
     # Compile Trainer
-    average = "micro"
+    average = "macro"
     compute_metric = create_compute_metrics_fn(average)
     trainer = Trainer(
         model=model, args=training_args, train_dataset=train_dataset, eval_dataset=test_dataset, compute_metrics=compute_metric
@@ -134,8 +139,10 @@ def main():
         # Create dirs if not exist
         Path(os.path.join(args.significance_output_path, args.dataset_name)).mkdir(parents=True, exist_ok=True)
 
+        filepath = os.path.join(args.significance_output_path, args.dataset_name, args.model_name_or_path + '.txt')
+
         # Write to txt file
-        with open(os.path.join(args.significance_output_path, args.dataset_name, args.model_name_or_path + '.txt'), "w") as f:
+        with open(filepath, "w") as f:
 
             # For each sample
             for i in range(args.num_significance_samples):
@@ -149,6 +156,8 @@ def main():
 
                 # Write to file
                 f.write(str(score["f1-" + average]) + os.linesep)
+                artifact = wandb.Artifact('my-dataset', type='dataset')
+                artifact.add_file(filepath)
 
 if __name__ == '__main__':
     main()
