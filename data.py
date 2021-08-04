@@ -5,13 +5,13 @@ from torch.utils.data import Dataset
 
 
 def text_label(df):
-    return list(df['text']), list(df['label'])
+    return [str(el) for el in df['text']], list(df['label'])
 
 def title_content_label(df):
-    return list(df['title']), list(df['content']), list(df['label'])
+    return [str(el) for el in df['title']], [str(el) for el in df['content']], [int(el) for el in df['label']]
 
 def premise_text_stance(df):
-    return list(df['premise']), list(df['text']), list(df['stance'])
+    return [str(el) for el in df['premise']], [str(el) for el in df['text']], [int(el) for el in df['stance']]
 
 
 class COVIDDataset(Dataset):
@@ -40,11 +40,11 @@ class COVIDDataset(Dataset):
         # CMU has one text and needs to be tokenzied [CLS] text [SEP] (depending on the model the CLS and SEP change automatically)
         if self.dataset_name == "cmu":
             X, y = self.dataset_dict[self.dataset_name](data_df)
-            X_encodings = self.tokenizer(X, truncation=True, padding=True)
+            X_encodings = self.tokenizer(X, truncation=True, padding=True, return_tensors="pt")
         # Everything else has two texts and needs [CLS] text1 [SEP] text2 [SEP] (depending on the model the CLS and SEP change automatically)
         else:
             X_1, X_2, y = self.dataset_dict[self.dataset_name](data_df)
-            X_encodings = self.tokenizer(X_1, X_2, truncation=True, padding=True)
+            X_encodings = self.tokenizer(X_1, X_2, truncation=True, padding=True, return_tensors="pt")
 
         return (X_encodings, y)
 

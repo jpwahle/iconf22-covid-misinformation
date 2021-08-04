@@ -35,18 +35,13 @@ def set_seed(seed):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
 
-def generate_tokenize_fn(tokenizer):
-    def tokenize_fn(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True)
-    return tokenize_fn
-
 def init_model(model_name: str, num_classes: int) -> AutoModelForSequenceClassification:
     config = AutoConfig.from_pretrained(model_name, num_labels=num_classes)
     model = AutoModelForSequenceClassification.from_pretrained(model_name, config=config)
     return model
 
 def init_tokenizer(model_name: str) -> AutoTokenizer:
-    return AutoTokenizer.from_pretrained(model_name)
+    return AutoTokenizer.from_pretrained(model_name, fast=False)
 
 def load_model_list(path: str) -> List[Dict[str, str]]:
     with open(path, "r") as f:
@@ -69,10 +64,10 @@ def main():
     # Number of classes per dataset (hardcoded) just for testing the num_labels function that automatically calculates the number of labels
     num_class_dict = {
         "cmu": 16,
-        "coaid": 3,
-        "fn19": 3,
+        "coaid": 2,
+        "fn19": 2,
         "par": 3,
-        "rec": 3
+        "rec": 2
     }
     
     # Parse arguments
@@ -92,7 +87,7 @@ def main():
     test_dataset = COVIDDataset(data_path=test_path, tokenizer=tokenizer, dataset_name=args.dataset_name)
 
     num_labels = train_dataset.num_labels()
-    assert num_labels == num_class_dict.get(args.dataset_name), "Number of labels in train dataset does not align with expected number of labels for {}".format(args.dataset_name)
+    assert num_labels == num_class_dict.get(args.dataset_name), "Number of labels ({}) in train dataset does not align with expected number of labels ({}) for {}".format(num_labels, num_class_dict.get(args.dataset_name), args.dataset_name)
 
     # Load model (and checkpoint)
     model = init_model(args.model_name_or_path, num_class_dict[args.dataset_name])
