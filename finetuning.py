@@ -156,8 +156,7 @@ def main():
 
                 # Write to file
                 f.write(str(score["f1-" + average]) + os.linesep)
-                artifact = wandb.Artifact('my-dataset', type='dataset')
-                artifact.add_file(filepath)
+                wandb.save(filepath)
 
 if __name__ == '__main__':
     main()
