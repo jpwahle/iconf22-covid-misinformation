@@ -1,0 +1,76 @@
+{
+    "models": [
+        {
+            "name": "bert-base-uncased",
+            "size": "base" 
+        },
+        {
+            "name": "distilbert-base-uncased",
+            "size": "base" 
+        },
+        {
+            "name": "roberta-base",
+            "size": "base" 
+        },
+        {
+            "name": "allenai/scibert_scivocab_uncased",
+            "size": "base" 
+        },
+        {
+            "name": "emilyalsentzer/Bio_ClinicalBERT",
+            "size": "base" 
+        },
+        {
+            "name": "lordtt13/COVID-SciBERT",
+            "size": "base" 
+        },
+        {
+            "name": "facebook/bart-base",
+            "size": "base" 
+        },
+        {
+            "name": "covid-roberta",
+            "size": "base" 
+        },
+        {
+            "name": "covid-bart",
+            "size": "base" 
+        },
+        {
+            "name": "covid-deberta",
+            "size": "base" 
+        },
+        {
+            "name": "deepset/covid_bert_base",
+            "size": "base"
+        },
+        {
+            "name": "vinai/bertweet-base",
+            "size": "base"
+        },
+        {
+            "name": "digitalepidemiologylab/covid-twitter-bert-v2",
+            "size": "large"
+        },
+        {
+            "name": "manueltonneau/clinicalcovid-bert-base-cased", 
+            "size": "base"
+        },
+        {
+            "name": "manueltonneau/biocovid-bert-large-cased",
+            "size": "large"
+        },
+        {
+            "name": "covid-longformer",
+            "size": "large"
+        },
+        {
+            "name": "covid-twitter-bert",
+            "size": "large"
+        },
+        {
+            "name": "allenai/longformer-base-4096",
+            "size": "base"
+        }
+    ]    
+}

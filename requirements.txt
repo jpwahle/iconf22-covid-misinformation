@@ -1,0 +1,6 @@
+transformers
+numpy
+pandas
+ray[default]
+wandb
+six
