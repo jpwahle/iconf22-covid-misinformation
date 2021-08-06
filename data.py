@@ -58,9 +58,3 @@ class COVIDDataset(Dataset):
 
     def num_labels(self):
         return max(self.labels) - min(self.labels) + 1
-
-    
-class CMUDataset(COVIDDataset):
-    def __init__(self, data_path, tokenizer):
-        super(CMUDataset, self).__init__(data_path, tokenizer)
-
