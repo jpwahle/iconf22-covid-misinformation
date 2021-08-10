@@ -24,8 +24,8 @@ def parse_args():
     parser.add_argument('--adam_epsilon', type=float, default=1e-8)
     parser.add_argument('--learning_rate', type=float, default=5e-5)
     parser.add_argument('--weight_decay', type=float, default=0.0)
-    parser.add_argument('--train_batch_size', type=int, default=16)
-    parser.add_argument('--valid_batch_size', type=int, default=32)
+    parser.add_argument('--train_batch_size', type=int, default=4)
+    parser.add_argument('--valid_batch_size', type=int, default=8)
     parser.add_argument('--warmup_steps', type=int, default=1000)
     args = parser.parse_args()
     return args

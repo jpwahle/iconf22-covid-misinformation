@@ -73,6 +73,10 @@ def main():
     # Parse arguments
     args = parse_args()
 
+    # Add dataset and run name to wandb config
+    wandb.config.dataset_name = args.dataset_name
+    wandb.run.name = f"test-{args.model_name_or_path}-{args.dataset_name}"
+
     # Set random seed for reproducibility
     set_seed(args.random_seed)
 
