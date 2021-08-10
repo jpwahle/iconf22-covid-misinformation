@@ -146,3 +146,4 @@ param_trainer/
 significance_results/
 wandb/
 .DS_Store
+test-*

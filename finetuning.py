@@ -8,18 +8,18 @@ from pathlib import Path
 from args import parse_args
 from data import COVIDDataset
 from typing import List, Dict
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support
 from transformers import Trainer, TrainingArguments, AutoTokenizer, AutoModelForSequenceClassification, AutoTokenizer, AutoConfig, EvalPrediction
 
 
 def create_compute_metrics_fn(average):
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
+        if type(logits) is tuple:
+            logits = logits[0] 
         predictions = np.argmax(logits, axis=-1)
         precision, recall, f1, _ = precision_recall_fscore_support(labels, predictions, average=average)
-        acc = accuracy_score(labels, predictions)
         return {
-            'accuracy': acc,
             'f1-' + average: f1,
             'precision': precision,
             'recall': recall
