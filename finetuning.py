@@ -41,7 +41,7 @@ def init_model(model_name: str, num_classes: int) -> AutoModelForSequenceClassif
     return model
 
 def init_tokenizer(model_name: str) -> AutoTokenizer:
-    return AutoTokenizer.from_pretrained(model_name, fast=False)
+    return AutoTokenizer.from_pretrained(model_name, use_fast=False, model_max_length=512)
 
 def load_model_list(path: str) -> List[Dict[str, str]]:
     with open(path, "r") as f:
