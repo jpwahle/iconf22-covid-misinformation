@@ -1,6 +1,6 @@
 # Covid-19 Misinformation Detection
 
-This repository contains the code and data for the paper "Testing the Generalization of Neural Language Models for COVID-19 Misinformation Detection".
+This repository contains the code and data for the paper ["Testing the Generalization of Neural Language Models for COVID-19 Misinformation Detection"](https://arxiv.org/abs/2111.07819).
 
 ## How to use
 
