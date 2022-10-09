@@ -1,5 +1,7 @@
 # Covid-19 Misinformation Detection
 
+[![arXiv](https://img.shields.io/badge/arXiv-2111.07819-b31b1b.svg)](https://arxiv.org/abs/2111.07819)
+
 This repository contains the code and data for the paper ["Testing the Generalization of Neural Language Models for COVID-19 Misinformation Detection"](https://arxiv.org/abs/2111.07819).
 
 ## How to use
